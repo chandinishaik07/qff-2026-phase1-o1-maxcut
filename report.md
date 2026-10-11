@@ -1,7 +1,24 @@
 # Scientific Report: Architecture Benchmarking of QAOA on Constrained Coupling Maps
-**Problem Statement:** O1 — Max-Cut  
-**Track:** Quantum Optimization  
-**Benchmark Suite:** Qiskit Fall Fest 2026 Phase 1  
+**Problem Statement:** O1 — Max-Cut[cite: 15, 36]  
+**Track:** Quantum Optimization[cite: 15, 36]  
+**Benchmark Suite:** Qiskit Fall Fest 2026 Phase 1[cite: 1, 15]  
+
+---
+
+## 0. Problem Statement Specification Sheet
+| Specification Item | Participant Value |
+|---|---|
+| **PS Code** | O1[cite: 15, 36] |
+| **PS Name** | Max-Cut[cite: 15, 36] |
+| **Track** | Quantum Optimization[cite: 15, 36] |
+| **Input / Instance** | 5-node cyclic graph ($C_5$) with cross-edge $(0, 3)$[cite: 36] |
+| **Core Algorithm** | Single-layer QAOA ($p=1$) with classical COBYLA variational optimization[cite: 36] |
+| **Required Output** | Optimal bitstring partition, expected cut $\langle C \rangle$, approximation ratio $r$[cite: 36] |
+| **Primary Metric** | Max-Cut Approximation Ratio ($r = \langle C \rangle / C_{\text{max}}$)[cite: 36] |
+| **Reference / Classical Baseline** | Classical brute-force maximum cut = 5[cite: 36] |
+| **Processor A Requirements** | 5 physical qubits, linear chain coupling map[cite: 4, 36] |
+| **Processor B Requirements** | 7 physical qubits, heavy-hex-inspired branched coupling map[cite: 4, 36] |
+| **Key Architecture Metrics** | Transpiled depth, CX gate count, equivalent SWAPs, noise sensitivity[cite: 10, 36] |
 
 ---
 
@@ -47,10 +64,17 @@ We evaluated three distinct transpiler routing heuristics (`Basic`, `Lookahead`,
 ---
 
 ## 4. Noise Resilience & Error Scaling
-Sweeping physical two-qubit gate error rates ($p_2 \in [0.2\%, 6.0\%]$) demonstrates that Processor B maintains higher solution fidelity across error regimes because lower two-qubit gate overhead directly reduces cumulative depolarizing channel exposure.
+Sweeping physical two-qubit gate error rates ($p_2 \in [0.2\%, 6.0\%]$) demonstrates that Processor B maintains higher solution fidelity across error regimes because lower two-qubit gate overhead directly reduces cumulative depolarizing channel exposure[cite: 2, 8, 12].
 
 ---
 
 ## 5. Artifacts & Reproducibility
-- Machine-readable result tables: `results/tables/AB_comparison.csv`, `results/tables/routing_comparison.csv`, and `results/tables/noise_sweep.csv`.
-- Generated visual dashboards: `results/figures/AB_performance.png`, `results/figures/architecture_tradeoffs.png`, and `results/figures/routing_comparison.png`.
+- Machine-readable result tables: `results/tables/AB_comparison.csv`, `results/tables/routing_comparison.csv`, and `results/tables/noise_sweep.csv`[cite: 24, 25, 41].
+- Generated visual dashboards: `results/figures/AB_performance.png`, `results/figures/architecture_tradeoffs.png`, and `results/figures/routing_comparison.png`[cite: 24, 25, 41].
+
+---
+
+## 6. Limitations & Technical Boundaries
+1. **Algorithmic Depth:** The present evaluation benchmarked QAOA at depth $p=1$. While $p=1$ reveals clear initial routing overheads, higher circuit depths ($p \ge 2$) compound two-qubit gate depth, where multi-qubit crosstalk and coherent phase errors may behave non-linearly[cite: 10, 12].
+2. **Synthetic Noise Model:** Simulations employed an idealized depolarizing error channel and symmetric readout confusion matrix[cite: 4, 32]. Physical superconducting QPUs feature localized spectator-qubit crosstalk, anisotropic relaxation times, and frequency collisions that can shift optimal qubit placement beyond static coupling graph analysis[cite: 3, 12].
+3. **Finite Problem Scale:** A 5-node graph maps compactly onto 5-qubit and 7-qubit systems[cite: 4, 28]. In Phase 2, scaling to larger instances on Processors C and D will test whether branched tree topologies introduce bottleneck congestion during multi-qubit routing passes[cite: 4, 5, 9].
