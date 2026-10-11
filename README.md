@@ -63,7 +63,7 @@ Noise model parameters: 1Q error = $0.1%$, 2Q CX error = $1.0%$, readout error =
 
 |               Processor A (5-Qubit Line)              |            Processor B (9-Qubit Heavy-Hex)            |
 | :---------------------------------------------------: | :---------------------------------------------------: |
-| ![Processor A](results/figures/processor_a_graph.png) | ![Processor B](results/figures/processor_b_graph.png) |
+| ![Processor A](results/figures/processor_A_graph.png) | ![Processor B](results/figures/processor_B_graph.png) |
 
 ### Performance & Trade-offs
 
