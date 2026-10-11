@@ -13,7 +13,7 @@ from src.problem import create_problem_graph, compute_classical_max_cut, build_q
 from src.metrics import extract_circuit_metrics, calculate_approximation_ratio
 from src.benchmark import run_processor_benchmark
 from src.optimizer import optimize_qaoa_angles
-from src.routing_benchmark import evaluate_routing_methods
+from src.routing import evaluate_routing_methods
 from src.noise_sweep import run_noise_sweep
 
 
