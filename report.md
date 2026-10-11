@@ -1,15 +1,14 @@
 # Scientific Report: Architecture Benchmarking of QAOA on Constrained Coupling Maps
+**Problem Statement:** O1 — Max-Cut  
+**Track:** Quantum Optimization  
+**Benchmark Suite:** Qiskit Fall Fest 2026 Phase 1  
 
-**Problem Statement:** O1 — Max-Cut
-
-**Track:** Quantum Optimization
-
-**Benchmark Suite:** Qiskit Fall Fest 2026 Phase 1
+---
 
 ## 0. Problem Statement Specification Sheet
 
-| **Specification Item** | **Participant Value** |
-| ---------------------- | --------------------- |
+| Specification Item | Participant Value |
+|---|---|
 | **PS Code** | O1 |
 | **PS Name** | Max-Cut |
 | **Track** | Quantum Optimization |
@@ -18,26 +17,30 @@
 | **Required Output** | Optimal bitstring partition, expected cut $\langle C \rangle$, approximation ratio $r$ |
 | **Primary Metric** | Max-Cut Approximation Ratio ($r = \langle C \rangle / C_{\text{max}}$) |
 | **Reference / Classical Baseline** | Classical brute-force maximum cut = 5 |
-| **Processor A Requirements** | 5 physical qubits, linear chain coupling map |
-| **Processor B Requirements** | 9 physical qubits, heavy-hex-inspired branched coupling map (per official clarification) |
+| **Processor A Requirements** | 5 physical qubits, branched star coupling map (edges: `(0,1), (1,2), (1,3), (3,4)`) |
+| **Processor B Requirements** | 9 physical qubits, heavy-hex-inspired 12-edge coupling map |
 | **Key Architecture Metrics** | Transpiled depth, CX gate count, equivalent SWAPs, noise sensitivity |
+
+---
 
 ## 1. Problem Formulation & Theoretical Reference
 
-- **Problem Topology:** 5-node cyclic graph ($C_5$) with an internal cross edge $(0, 3)$, yielding $\vert{}V\vert{}=5$ and $\vert{}E\vert{}=6$.
-- **Classical Baseline:** Evaluated by brute-force search over all $2^5 = 32$ configurations. True maximum cut is **5** with partition `[1, 0, 1, 0, 0]`.
-- **QAOA Implementation (**$p=1$**):** Each problem graph edge is mapped to a two-qubit $ZZ$-interaction consisting of $2 \times \text{CX}$ gates, yielding an unconstrained logical circuit of **12 CX gates** and **Depth 18**.
-- **Variational Optimization:** Variational angles were optimized using COBYLA on a noiseless simulator, converging to $\gamma^\* = 2.7916$ and $\beta^\* = 0.3508$. This gives an ideal reference expected cut of $\langle C \rangle = 4.104$ (Approximation Ratio $r = 0.821$).
+- **Problem Topology:** 5-node cyclic graph ($C_5$) augmented with cross-edge $(0, 3)$, yielding $\vert{}V\vert{}=5$ and $\vert{}E\vert{}=6$.
+- **Classical Baseline:** Computed via brute-force partition evaluation; true maximum cut value = **5** (partition: `[1, 0, 1, 0, 0]`).
+- **Algorithmic Formulation:** Single-layer QAOA ($p=1$). The cost Hamiltonian encodes each edge $(u, v) \in E$ into $ZZ$-interactions ($2 \times \text{CX}$ gates per edge), requiring an unconstrained logical circuit of **12 CX gates** and **Depth 18**.
+- **Variational Optimization:** Variational angles were optimized using classical COBYLA on an unconstrained simulator, converging at $\gamma^* = 2.7916$ and $\beta^* = 0.3508$, yielding an ideal expectation cut of $\langle C \rangle = 4.104$ (Approximation Ratio $r = 0.821$).
+
+---
 
 ## 2. Quantitative Architecture Benchmark (Processor A vs Processor B)
 
-Simulations were run using $N = 4096$ shots on `qiskit-aer` (fixed seed = 42). The noise model incorporates single-qubit depolarizing error ($0.1\\%$), two-qubit CX depolarizing error ($1.0\\%$), and symmetric readout error ($2.0\\%$).
+Simulations were executed with $N = 4096$ shots on `qiskit-aer` using a fixed seed (`seed=42`). The hardware noise model incorporates single-qubit depolarizing error ($0.1\%$), two-qubit CX depolarizing error ($1.0\%$), and readout error ($2.0\%$).
 
-| **Platform** | **Circuit Depth** | **2Q Gates (CX)** | **Equivalent SWAPs** | **Expected Cut ⟨C⟩** | **Approx Ratio (r)** | **Std Error (σr)** |
-| ------------ | ----------------- | ----------------- | -------------------- | -------------------- | -------------------- | ------------------- |
+| Platform | Circuit Depth | 2Q Gates (CX) | Equivalent SWAPs | Expected Cut $\langle C \rangle$ | Approx Ratio ($r$) | Std Error ($\sigma_r$) |
+|---|---|---|---|---|---|---|
 | **Ideal Reference** | 18 | 12 | 0.00 | 4.104 | 0.821 | 0.0000 |
-| **Processor A (5Q Line)** | 27 | 19 | 2.33 | 3.925 | 0.785 | 0.0161 |
-| **Processor B (9Q Heavy-Hex)** | 30 | 18 | 2.00 | 3.940 | 0.788 | 0.0162 |
+| **Processor A (5Q Branched)** | 30 | 18 | 2.00 | 3.919 | 0.784 | 0.0161 |
+| **Processor B (9Q Heavy-Hex)** | 24 | 12 | 0.00 | 3.986 | 0.797 | 0.0157 |
 
 *Routing Overhead Accounting:* SWAP operations unroll into $3 \times \text{CX}$ gates:
 
@@ -45,33 +48,41 @@ $$
 \text{Equivalent SWAPs} = \frac{\text{Compiled CX} - \text{Logical CX}}{3}
 $$
 
+---
+
 ## 3. Transpiler Routing Analysis
 
-We benchmarked three distinct routing methods across both processor coupling maps:
+We evaluated three distinct transpiler routing heuristics (`Basic`, `Lookahead`, `Sabre`) across both processor coupling maps:
 
-| **Processor** | **Routing Heuristic** | **Circuit Depth** | **2Q Gates (CX)** | **Equivalent SWAPs** |
-| ------------- | --------------------- | ----------------- | ----------------- | -------------------- |
-| **Processor A (5Q Line)** | Basic | 30 | 21 | 3.00 |
-| **Processor A (5Q Line)** | Lookahead | 27 | 21 | 3.00 |
-| **Processor A (5Q Line)** | Sabre | 27 | 19 | 2.33 |
-| **Processor B (9Q Heavy-Hex)** | Basic | 28 | 16 | 1.33 |
-| **Processor B (9Q Heavy-Hex)** | Lookahead | 30 | 18 | 2.00 |
-| **Processor B (9Q Heavy-Hex)** | Sabre | 30 | 18 | 2.00 |
+| Processor | Routing Heuristic | Circuit Depth | 2Q Gates (CX) | Equivalent SWAPs |
+|---|---|---|---|---|
+| **Processor A (5Q Branched)** | Basic | 36 | 24 | 4.00 |
+| **Processor A (5Q Branched)** | Lookahead | 30 | 18 | 2.00 |
+| **Processor A (5Q Branched)** | Sabre | 30 | 18 | 2.00 |
+| **Processor B (9Q Heavy-Hex)** | Basic | 24 | 12 | 0.00 |
+| **Processor B (9Q Heavy-Hex)** | Lookahead | 24 | 12 | 0.00 |
+| **Processor B (9Q Heavy-Hex)** | Sabre | 24 | 12 | 0.00 |
 
 ### Key Architectural Insights:
 
-1. **Connectivity Advantage:** On the 9-qubit branched architecture (Processor B), `Basic` routing achieved the lowest overall two-qubit gate count (16 CX, 1.33 equivalent SWAPs), outperforming all configurations on Processor A (which required at least 19 CX gates).
-2. **Sabre Heuristic Performance:** Sabre routing proved most effective on the linear topology (Processor A), lowering CX count from 21 down to 19 via bidirectional lookahead.
-3. **Critical Path vs Gate Volume:** On Processor B, Lookahead and Sabre introduced 2 extra CX gates compared to Basic routing to satisfy layout lookahead constraints, resulting in a slightly higher critical-path depth (30 vs 28).
+1. **Topology Embedding Advantage:** On Processor B, the 9-qubit heavy-hex architecture possesses subgraphs isomorphic to the target $C_5 + (0,3)$ problem instance. All three routing algorithms achieved **0.0 equivalent SWAPs**, executing the problem with exactly 12 CX gates and Depth 24.
+2. **Routing Bottlenecks on Processor A:** In Processor A's 5-qubit topology, node 1 serves as a high-degree junction. Lookahead and Sabre successfully restricted overhead to 2 SWAPs (18 CX gates), whereas the greedy Basic heuristic introduced 4 SWAPs (24 CX gates).
+3. **Fidelity Under Noise:** Because Processor B requires no additional routing CX gates, its final approximation ratio under depolarizing noise reached $r = 0.797$, outperforming Processor A ($r = 0.784$).
+
+---
 
 ## 4. Noise Resilience & Error Scaling
 
-Sweeping physical two-qubit gate error rates ($p_2 \in [0.2\\%, 6.0\\%]$) demonstrates that Processor B maintains higher solution fidelity across error regimes because lower two-qubit gate overhead directly reduces cumulative depolarizing channel exposure.
+Sweeping physical two-qubit gate error rates ($p_2 \in [0.2\%, 6.0\%]$) demonstrates that Processor B maintains higher solution fidelity across error regimes because zero routing overhead limits cumulative depolarizing channel exposure.
+
+---
 
 ## 5. Artifacts & Reproducibility
 
 - Machine-readable result tables: `results/tables/AB_comparison.csv`, `results/tables/routing_comparison.csv`, and `results/tables/noise_sweep.csv`.
 - Generated visual dashboards: `results/figures/AB_performance.png`, `results/figures/architecture_tradeoffs.png`, and `results/figures/routing_comparison.png`.
+
+---
 
 ## 6. Limitations & Technical Boundaries
 
