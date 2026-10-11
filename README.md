@@ -81,6 +81,14 @@ project/
 ├── data/
 │   ├── raw/
 │   └── processed/
+├── docs/
+│   └── ai/
+│       ├── adrs.md
+│       ├── issues.md
+│       ├── patterns.md
+│       ├── plan-evolution.md
+│       ├── postmortem.md
+│       └── prompts.md
 ├── processors/
 │   ├── processor_A.json
 │   └── processor_B.json
