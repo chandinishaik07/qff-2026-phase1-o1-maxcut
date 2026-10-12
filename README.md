@@ -1,7 +1,6 @@
 # Qiskit Fall Fest 2026 — Phase 1: Architecture Benchmark
 **Problem Statement:** O1 — Max-Cut  
 **Track:** Quantum Optimization  
-**Author / Team:** Shaik Chandini  
 **Phase:** 1 (Online Qualification Stage)
 
 ---
