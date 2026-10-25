@@ -136,4 +136,4 @@ python main.py
 
 ## 8. AI Assistance Disclosure
 
-In compliance with the official hackathon AI policy, LLM assistance was utilized as an engineering aid for environment troubleshooting, script modularization, and Markdown formatting. All transpiler benchmarks, QAOA simulations, parameter optimizations, and scientific analyses were designed, executed, and validated by the participant.
+AI assistance was limited to environment troubleshooting, script organization, and Markdown formatting. All experiments, simulations, optimizations, and scientific analyses were independently conducted and validated.
