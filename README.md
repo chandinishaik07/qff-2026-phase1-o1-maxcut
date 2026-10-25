@@ -120,8 +120,8 @@ project/
 
 ```bash
 # 1. Clone repository
-git clone <YOUR_REPO_URL>
-cd qff_maxcut_phase1
+git clone https://github.com/chandinishaik07/qff-2026-phase1-o1-maxcut
+cd qff-2026-phase1-o1-maxcut
 
 # 2. Virtual environment setup
 python -m venv venv
