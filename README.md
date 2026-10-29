@@ -1,101 +1,119 @@
 # Qiskit Fall Fest 2026 — Optimization Track (Phase 2)
 
-**Team Name:** Qubit Nexus  
-**Selected Track & Problem Statement:** PS-O1 (Max-Cut Network Partitioning)  
-**Submission Repository:** Phase 2 Submission with Archived Phase 1  
+**Team Name:** Qubit Nexus
+**Selected Track & Problem Statement:** PS-O1 (Max-Cut Network Partitioning)
+**Submission Repository:** Phase 2 Submission with Archived Phase 1
 
 ---
 
 ## 1. Executive Summary & Problem Formulation
 
-This repository contains the complete, reproducible Phase 2 submission for **PS-O1 (Max-Cut Network Partitioning)**. 
+This repository contains our Phase 2 submission for **PS-O1 (Max-Cut Network Partitioning)**.
 
-The optimization task evaluates max-cut partitioning on a locked 6-vertex, 9-edge weighted network $G = (V, E, w)$ with:
-$$E = \{(0,2,1), (0,3,4), (0,4,4), (1,4,3), (1,5,3), (2,3,5), (2,4,1), (3,4,4), (3,5,2)\}$$
+The optimization task evaluates Max-Cut partitioning on a 6-vertex, 9-edge weighted network \(G = (V, E, w)\):
 
-We map binary partitioning variables $x_i \in \{0, 1\}$ to Pauli-$Z$ operators to construct the cost Hamiltonian $H_C$, solved using the Quantum Approximate Optimization Algorithm (QAOA, $p=1$) benchmarked across multiple target architectures under ideal and open-system noise models.
+$$
+E = \{(0,2,1), (0,3,4), (0,4,4), (1,4,3), (1,5,3), (2,3,5), (2,4,1), (3,4,4), (3,5,2)\}
+$$
 
-### Key Benchmark Summary (Gate G2 Deliverable)
+We map binary partitioning variables \(x_i \in \{0,1\}\) to Pauli-\(Z\) operators to construct the cost Hamiltonian \(H_C\). We solve the problem using the Quantum Approximate Optimization Algorithm (QAOA, \(p=1\)) and benchmark the results across multiple target architectures under ideal and noisy simulation conditions.
 
-| Metric | Random Baseline | Processor A (5Q) | Processor B (9Q Noisy) | Processor D (6Q Noisy) | Classical Optimal ($C^*$) |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **Status / Executable** | N/A | `false` (Capacity) | `true` | `true` | Ground Truth |
-| **Approximation Ratio ($r$)** | $0.6136$ | — | $0.7833$ | **$0.7850$** | $1.0000$ |
-| **Optimal Hit Probability ($P_{\text{opt}}$)** | $0.0312$ ($3.12\%$) | — | $0.1257$ | **$0.1274$ ($4.08\times$ Gain)** | N/A |
-| **Routing SWAPs** | — | — | 1 | **0** | — |
-| **Physical CX Gates** | — | — | 21 | **18 (0 CX Overhead)** | — |
+### Key Benchmark Summary
+
+| Metric                                           | Random Baseline | Processor A (5Q) | Processor B (9Q, Noisy) | Processor D (6Q, Noisy) | Classical Optimum |
+| :----------------------------------------------- | :-------------: | :--------------: | :---------------------: | :---------------------: | :---------------: |
+| **Executable**                                   |       N/A       |        No        |           Yes           |           Yes           |        N/A        |
+| **Approximation Ratio (\(r\))**                  |      0.6136     |        N/A       |          0.7833         |        **0.7850**       |       1.0000      |
+| **Optimal Hit Probability (\(P_{\text{opt}}\))** |  0.0312 (3.12%) |        N/A       |          0.1257         |        **0.1274**       |        N/A        |
+| **Routing SWAPs**                                |       N/A       |        N/A       |            1            |          **0**          |        N/A        |
+| **Physical CX Gates**                            |       N/A       |        N/A       |            21           |          **18**         |        N/A        |
+| **Classical Optimum (\(C^*\))**                  |       N/A       |        N/A       |            22           |            22           |       **22**      |
+
+Processor D achieves approximately **4.08× the random baseline's optimal-hit probability**, while using three fewer physical CX gates and requiring no routing SWAPs compared with Processor B.
 
 ---
 
 ## 2. Repository Structure
 
-Per Section 10 guidelines, the root directory is strictly dedicated to Phase 2 deliverables, while Phase 1 materials are fully preserved in `Phase One/`.
+The root directory contains the Phase 2 deliverables, while the original Phase 1 materials are preserved in `Phase 1/`.
 
-```
+```text
 .
-├── Phase One/                       # Archived Phase 1 submission & documentation
-│   ├── assets/                      # Phase 1 diagrams & assets
-│   ├── docs/                        # Phase 1 architecture logs & writeups
-│   ├── main.py                      # Original Phase 1 solver
-│   └── README_Phase1.md             # Archived Phase 1 README
-│
+├── Phase 1/                    # Archived Phase 1 work
 ├── data/
-│   └── instance.json                # PS-O1 locked benchmark configuration
-│
+│   └── instances.json           # Problem instance data
 ├── processors/
-│   ├── processor_A.json             # 5-qubit linear/tree architecture (official)
-│   ├── processor_B.json             # 9-qubit heavy-hex topology (official)
-│   └── processor_D.json             # 6-qubit custom application-specific topology
-│
+│   └── processor_D.json         # Custom six-qubit processor
 ├── results/
 │   ├── figures/
-│   │   └── optimal_partition.png   # 2-partition graph visual ($C^* = 22$)
+│   │   └── optimal_partition.png
 │   └── tables/
-│       ├── bell.csv                 # Bell-state tomography & correlation data
-│       └── results.csv              # Official 6-row hardware benchmark table
-│
-├── src/
-│   └── qaoa_o1.py                   # Classical Max-Cut solver & QAOA ansatz builder
-│
-├── instances.json                   # Competition track problem definitions
-├── main.ipynb                       # Runnable end-to-end benchmark notebook
-├── qff_phase2.py                    # Official evaluation harness & metric utilities
-├── report.md                        # Formal Technical Report (Objectives 1–4)
-├── requirements.txt                 # Pinned dependencies for reproduction
-└── run_all.py                       # Automated standalone execution pipeline
+│       ├── bell.csv
+│       └── results.csv
+├── src/                         # Supporting source files
+├── main.ipynb                   # End-to-end benchmark notebook
+├── qff_phase2.py                # Evaluation and metric utilities
+├── generate_processor.py        # Processor generation utility
+├── report.md                    # Technical report
+├── requirements.txt             # Pinned Python dependencies
+└── run_all.py                   # Automated execution pipeline
 ```
 
 ---
 
 ## 3. Quick Start & Reproducibility (Gate G3)
 
-All results, tables, and figures can be completely reproduced from scratch in under 3 minutes.
+The benchmark pipeline generates the results tables and figures using the provided problem and processor configuration files.
 
 ### 3.1 Environment Setup
+
+Clone the repository and enter its directory:
+
 ```bash
-# 1. Clone the repository
 git clone https://github.com/chandinishaik07/qff-2026-phase1-o1-maxcut.git
 cd qff-2026-phase1-o1-maxcut
+```
 
-# 2. Create and activate a clean virtual environment
-python -m venv venv
-# On Windows (PowerShell):
-.\venv\Scripts\activate
-# On Linux / macOS:
-source venv/bin/activate
+Create and activate a virtual environment:
 
-# 3. Install pinned dependencies
+```bash
+python -m venv .qff2026-venv
+```
+
+On Windows PowerShell:
+
+```powershell
+.\.qff2026-venv\Scripts\Activate.ps1
+```
+
+On Linux or macOS, use:
+
+```bash
+source .qff2026-venv/bin/activate
+```
+
+Install the pinned dependencies:
+
+```bash
 pip install -r requirements.txt
 ```
 
 ### 3.2 Automated Pipeline Execution
-Run the standalone automated script:
+
+Run the standalone pipeline:
+
 ```bash
 python run_all.py
 ```
 
-### 3.3 Jupyter Notebook Execution (Gate G3 Audit)
-Execute the notebook non-interactively end-to-end:
+The script validates Processor D, performs the Bell-state verification and classical Max-Cut calculation, optimizes QAOA parameters, and exports the benchmark results.
+
+### 3.3 Jupyter Notebook Execution
+
+Open `main.ipynb` in Jupyter or VS Code and execute all cells from beginning to end.
+
+To execute it non-interactively, use:
+
 ```bash
 jupyter nbconvert --to notebook --execute --inplace main.ipynb
 ```
@@ -104,26 +122,31 @@ jupyter nbconvert --to notebook --execute --inplace main.ipynb
 
 ## 4. Hardware Architectures & Processor D
 
-* **Processor A (5 Qubits):** Non-executable for PS-O1 because the problem requires 6 logical variables, violating hardware capacity constraints.
-* **Processor B (9 Qubits):** Heavy-hex topology requiring SABRE routing SWAPs (1 SWAP added, increasing circuit depth to 37 and CX gate count to 21).
-* **Processor D (6 Qubits, Custom Design):** An application-specific coupling graph directly mirroring the PS-O1 graph structure ($N=6$, max degree $\Delta = 4$).
-  * **Zero SWAPs:** Circuit routes with 0 additional SWAPs.
-  * **Zero CX Overhead:** 18 logical CX gates compile directly to 18 physical CX gates.
-  * **Validation:** Verified compliant against all `validate_processor_d` rules.
+* **Processor A (5 qubits):** Non-executable for PS-O1 because the problem requires six logical qubits, exceeding the processor's capacity.
+* **Processor B (9 qubits):** The target topology requires one routing SWAP, resulting in 21 physical CX gates and a circuit depth of 37.
+* **Processor D (6 qubits):** A custom application-specific coupling graph designed to support the PS-O1 problem structure.
+
+### Processor D Advantages
+
+* **Zero routing SWAPs:** The circuit maps without additional routing SWAPs.
+* **Zero CX overhead:** The 18 logical CX gates compile to 18 physical CX gates.
+* **Reduced circuit depth:** Processor D has a circuit depth of 29, compared with 37 for Processor B.
+* **Validation:** Processor D passes the validation performed by `run_all.py`.
+
+In the current noisy simulation, Processor D achieves an approximation ratio of 0.7850, compared with 0.7833 for Processor B. These results are close; the primary demonstrated advantage of Processor D is reduced circuit overhead rather than a substantial improvement in solution quality.
 
 ---
 
 ## 5. Phase 1 Archive
 
-All historical work, algorithms, and documentation from Phase 1 of Qiskit Fall Fest 2026 remain intact under the [`Phase One/`](./Phase%20One/) directory. This includes the initial problem exploration, exploratory scripts, and legacy documentation.
+The original Phase 1 work is preserved in the `Phase 1/` directory. It contains earlier project materials and documentation.
+
+The Phase 2 implementation and deliverables are maintained separately at the repository root.
 
 ---
 
 ## 6. AI Usage Disclosure
 
-In compliance with Competition Guidelines (Section 10), generative AI assistance (Large Language Models) was used during this phase for:
-* Debugging Python script formatting, PowerShell encoding issues, and UTF-8 BOM sanitization.
-* Structuring Markdown report boilerplates and LaTeX notation.
-* Automating Git submodule decoupling and branch merge troubleshooting.
+Generative AI assistance was used during development for debugging, documentation formatting, LaTeX notation, and troubleshooting development and Git workflows.
 
-All quantum algorithmic implementations, QAOA circuits, objective functions, parameter optimizations, and numerical analyses were validated and verified by team members.
+The team is responsible for reviewing and validating the submitted implementation, experimental results, and documentation.

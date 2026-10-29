@@ -1,9 +1,12 @@
+import matplotlib
+matplotlib.use("Agg")
 import os, csv
 import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
 from scipy.optimize import minimize
 from qiskit_aer import AerSimulator
+
 
 from qff_phase2 import (
     PROCESSOR_A, PROCESSOR_B, load_processor, validate_processor_d,

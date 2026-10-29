@@ -1,239 +1,347 @@
 # Qiskit Fall Fest 2026 — Phase 2 Technical Report
 
-**Problem Track:** PS-O1 — Max-Cut Network Partitioning  
-**Team Name:** Qubit Nexus  
+**Problem Track:** PS-O1 — Max-Cut Network Partitioning
+**Team Name:** Qubit Nexus
 **Report Type:** Phase 2 Technical Report
 
 ---
 
 ## Abstract
 
-This report presents a QAOA-based approach to the PS-O1 weighted Max-Cut problem. It defines the graph objective, establishes a classical reference through exhaustive enumeration, summarizes Bell-state verification under ideal and noisy simulation, compares processor configurations, and discusses the QAOA benchmark results. The supplied results report that the custom six-qubit Processor D eliminates routing SWAP overhead for the target graph and achieves a noisy approximation ratio of 0.7850. These results apply to the supplied graph and simulation setup and do not establish a general quantum advantage over optimized classical methods.
+This report presents a Quantum Approximate Optimization Algorithm (QAOA)-based approach to the PS-O1 weighted Max-Cut problem. Exhaustive enumeration establishes the classical optimum, while Bell-state experiments compare ideal and noisy simulation. Processor A, Processor B, and a custom six-qubit Processor D are compared using circuit depth, CX gate count, and routing overhead. In the latest benchmark run, Processor D achieves a noisy approximation ratio of 0.7850 with no routing SWAPs. These results apply to the specified graph and simulation configuration and do not establish a general quantum advantage.
 
 ## 1. Introduction and Problem Definition
 
 ### 1.1 Problem Statement
 
-The objective is to divide the vertices of a weighted graph into two groups so that the total weight of edges crossing between the groups is maximized. This is the weighted Max-Cut problem.
+The objective is to partition a weighted graph into two groups such that the total weight of edges connecting different groups is maximized.
 
-The graph has six vertices and nine weighted edges. Vertices are indexed from 0 to 5.
+The graph contains six vertices, numbered from 0 to 5, and nine weighted edges.
 
 ### 1.2 Weighted Edge Set
 
-`E = {(0,2,1), (0,3,4), (0,4,4), (1,4,3), (1,5,3), (2,3,5), (2,4,1), (3,4,4), (3,5,2)}`
+**Edge set:**
 
-Each tuple `(u, v, w)` represents an edge between vertices `u` and `v` with weight `w`.
+E = {(0, 2, 1), (0, 3, 4), (0, 4, 4), (1, 4, 3), (1, 5, 3), (2, 3, 5), (2, 4, 1), (3, 4, 4), (3, 5, 2)}
 
-### 1.3 Mathematical Objective
+Each tuple (u, v, w) represents an edge between vertices u and v with weight w.
 
-Let `x_i` be a binary variable:
+### 1.3 Mathematical Formulation
 
-- `x_i = 0` means vertex `i` belongs to partition 0.
-- `x_i = 1` means vertex `i` belongs to partition 1.
+Each vertex is assigned to one of two partitions using a binary variable.
 
-An edge contributes its weight when its endpoints belong to different partitions. The cut value is:
+**Binary variable:**
 
-`C(x) = sum over edges (u, v, w) of w * (x_u + x_v - 2*x_u*x_v)`
+xᵢ ∈ {0, 1}
 
-The goal is to find the bitstring `x*` that maximizes `C(x)`.
+* xᵢ = 0: Vertex i belongs to Partition 0.
+* xᵢ = 1: Vertex i belongs to Partition 1.
 
-For the quantum formulation, the binary variables are mapped to Pauli-Z operators. The cost Hamiltonian used in the supplied report is:
+**Contribution of an edge:**
 
-`H_C = sum over edges (u, v, w) of (w/2) * (Z_u*Z_v - I)`
+Cᵤᵥ = wᵤᵥ |xᵤ − xᵥ|
 
-With this sign convention, minimizing the Hamiltonian energy corresponds to maximizing the cut value, up to the constant and sign convention used in the implementation.
+An edge contributes its weight only when its endpoints belong to different partitions.
+
+**Total cut value:**
+
+C(x) = Σ₍ᵤ,ᵥ₎∈E wᵤᵥ |xᵤ − xᵥ|
+
+**Optimization objective:**
+
+x* = arg max C(x), where x ∈ {0, 1}⁶
+
+The objective is to find the partition assignment that maximizes the total cut value.
+
+**Cost Hamiltonian:**
+
+H꜀ = Σ₍ᵤ,ᵥ,ʷ₎∈E (w/2)(ZᵤZᵥ − I)
+
+Here, Zᵤ and Zᵥ represent Pauli-Z operators, and I represents the identity operator. With this sign convention, minimizing the Hamiltonian expectation corresponds to maximizing the cut value.
 
 ## 2. Classical Baseline and Optimal Solution
 
 ### 2.1 Exhaustive Search
 
-All `2^6 = 64` possible bitstrings were evaluated classically to establish a reference optimum.
+All possible bitstrings were evaluated.
 
-| Metric | Reported result |
-|---|---:|
-| Number of vertices | 6 |
-| Number of weighted edges | 9 |
-| Total edge weight | 27 |
-| Candidate bitstrings | 64 |
-| Optimal cut value, `C*` | 22 |
-| Uniform-random expected cut | 13.50 |
-| Uniform-random approximation ratio | 0.6136 |
-| Uniform-random probability of an optimal bitstring | 2/64 = 3.125% |
+Number of possible states:
+
+N = 2⁶ = 64
+
+| Metric                     | Result |
+| -------------------------- | -----: |
+| Number of vertices         |      6 |
+| Number of weighted edges   |      9 |
+| Total edge weight          |     27 |
+| Candidate bitstrings       |     64 |
+| Classical optimal cut, C*  |     22 |
+| Expected random cut        |  13.50 |
+| Random approximation ratio | 0.6136 |
 
 ### 2.2 Optimal Bitstrings
 
-The two reported optimal, complementary solutions are:
+The two complementary optimal solutions are:
 
-- `x* = (1, 1, 0, 1, 0, 0)`
-- `complement(x*) = (0, 0, 1, 0, 1, 1)`
+* x* = (1, 1, 0, 1, 0, 0)
+* Complement of x* = (0, 0, 1, 0, 1, 1)
 
-They represent the same bipartition with the two sides exchanged.
+These represent the same bipartition with the two sides exchanged.
 
-The uniform-random expected cut is half the total edge weight:
+### 2.3 Random Baseline Calculation
 
-`Expected cut = 27/2 = 13.5`
+Each edge has a probability of 1/2 of crossing the cut under uniform random assignment.
 
-The approximation ratio is:
+**Expected random cut:**
 
-`r_random = 13.5/22 ≈ 0.6136`
+Expected Cut = Total Edge Weight / 2
+
+Expected Cut = 27 / 2 = 13.5
+
+**Random approximation ratio:**
+
+r_random = Expected Cut / Classical Optimal Cut
+
+r_random = 13.5 / 22 ≈ 0.6136
+
+The probability of randomly selecting one of the two optimal bitstrings is:
+
+P(optimal) = 2 / 64 = 0.03125 = 3.125%
 
 ## 3. Objective 1 — Bell-State Verification and Noise Analysis
 
 ### 3.1 Method
 
-Bell-state verification was reported for the state `|Phi+> = (|00> + |11>)/sqrt(2)`.
+The Bell-state experiment uses the state:
 
-The Pauli expectation values `<XX>`, `<YY>`, and `<ZZ>` were sampled over 4,096 shots. The reported fidelity formula is:
+|Φ⁺⟩ = (|00⟩ + |11⟩) / √2
 
-`F = (1 + <XX> - <YY> + <ZZ>)/4`
+The Pauli correlations ⟨XX⟩, ⟨YY⟩, and ⟨ZZ⟩ are estimated using 4,096 shots per measurement basis.
+
+**Fidelity formula:**
+
+F = [1 + ⟨XX⟩ − ⟨YY⟩ + ⟨ZZ⟩] / 4
 
 ### 3.2 Results
 
-| Physical pair | Reported distance | Condition | `<XX>` ± SE | `<YY>` ± SE | `<ZZ>` ± SE | CX count | Fidelity `F` ± SE |
-|---|---:|---|---:|---:|---:|---:|---:|
-| (0, 2) | 1 | Ideal | 1.0000 ± 0.0000 | -1.0000 ± 0.0000 | 1.0000 ± 0.0000 | 1 | 1.0000 ± 0.0000 |
-| (0, 2) | 1 | Noisy | 0.9458 ± 0.0051 | -0.9521 ± 0.0048 | 0.9551 ± 0.0046 | 1 | 0.9633 ± 0.0021 |
-| (1, 2) | 2 | Ideal | 1.0000 ± 0.0000 | -1.0000 ± 0.0000 | 1.0000 ± 0.0000 | 4 | 1.0000 ± 0.0000 |
-| (1, 2) | 2 | Noisy | 0.9443 ± 0.0051 | -0.9341 ± 0.0056 | 0.9385 ± 0.0054 | 4 | 0.9542 ± 0.0023 |
+| Qubit Pair | Distance | Condition |   ⟨XX⟩ |    ⟨YY⟩ |   ⟨ZZ⟩ | CX Count | Fidelity |
+| ---------- | -------: | --------- | -----: | ------: | -----: | -------: | -------: |
+| (0, 2)     |        1 | Ideal     | 1.0000 | −1.0000 | 1.0000 |        1 |   1.0000 |
+| (0, 2)     |        1 | Noisy     | 0.9458 | −0.9521 | 0.9551 |        1 |   0.9633 |
+| (1, 2)     |        2 | Ideal     | 1.0000 | −1.0000 | 1.0000 |        4 |   1.0000 |
+| (1, 2)     |        2 | Noisy     | 0.9443 | −0.9341 | 0.9385 |        4 |   0.9542 |
+
+**Noisy measurement standard errors:**
+
+| Qubit Pair | SE of XX | SE of YY | SE of ZZ | Fidelity SE |
+| ---------- | -------: | -------: | -------: | ----------: |
+| (0, 2)     |   0.0051 |   0.0048 |   0.0046 |      0.0021 |
+| (1, 2)     |   0.0051 |   0.0056 |   0.0054 |      0.0023 |
 
 ### 3.3 Noise Model
 
-The supplied noise parameters are:
+The simulation uses the following noise parameters:
 
-- Single-qubit depolarizing rate: `p1 = 0.001`
-- Two-qubit CX depolarizing rate: `p2 = 0.005`
-- Symmetric readout bit-flip probability: `p_ro = 0.01`
+* Single-qubit depolarizing rate: p₁ = 0.001
+* Two-qubit CX depolarizing rate: p₂ = 0.005
+* Readout bit-flip probability: pᵣₒ = 0.01
 
 ### 3.4 Discussion
 
-Under the reported noisy simulation, the adjacent pair `(0, 2)` has fidelity `0.9633 ± 0.0021`, while the routed pair `(1, 2)` has fidelity `0.9542 ± 0.0023`. The routed operation uses four CX gates instead of one, giving the circuit more opportunities for gate errors. This is consistent with the lower reported fidelity for the routed pair.
+The adjacent pair (0, 2) achieves a noisy fidelity of 0.9633, while pair (1, 2), at distance 2, achieves 0.9542.
 
-**Important verification note:** the supplied source also contains a secondary Bell-state paragraph with different pair labels and fidelity values. Confirm the final numbers against `results/tables/bell.csv` before submission.
+The second experiment uses four CX gates instead of one, increasing exposure to two-qubit gate errors. This is consistent with its lower measured fidelity.
+
+For the ideal Bell state, the expected correlations are:
+
+* ⟨XX⟩ = +1
+* ⟨YY⟩ = −1
+* ⟨ZZ⟩ = +1
+
+The ideal simulation matches these expected values.
 
 ## 4. Objective 2 — Custom Hardware Architecture: Processor D
 
 ### 4.1 Design Motivation
 
-The problem has six logical variables, so at least six physical qubits are required. The supplied material compares Processor A, Processor B, and custom Processor D. Processor D is designed so its physical coupling map matches the nine interactions in the target graph.
+The problem contains six logical variables and therefore requires at least six physical qubits to execute the complete circuit.
+
+Processor D uses six physical qubits and a coupling topology aligned with the nine interactions in the target graph.
 
 ### 4.2 Processor D Specifications
 
-| Specification | Reported value |
-|---|---|
-| Physical qubits | 6 |
-| Physical coupling edges | 9 |
-| Maximum node degree | 4 |
-| Native basis gates | `rz`, `sx`, `x`, `cx` |
-| Single-qubit depolarizing rate | 0.001 |
-| Two-qubit CX depolarizing rate | 0.005 |
-| Readout bit-flip probability | 0.01 |
+| Specification             | Value         |
+| ------------------------- | ------------- |
+| Physical qubits           | 6             |
+| Coupling edges            | 9             |
+| Maximum node degree       | 4             |
+| Basis gates               | rz, sx, x, cx |
+| Single-qubit noise rate   | 0.001         |
+| Two-qubit CX noise rate   | 0.005         |
+| Readout error probability | 0.01          |
 
-The coupling map is:
+**Undirected coupling edges:**
 
-`{(0,2), (0,3), (0,4), (1,4), (1,5), (2,3), (2,4), (3,4), (3,5)}`
+Eᴅ = {(0, 2), (0, 3), (0, 4), (1, 4), (1, 5), (2, 3), (2, 4), (3, 4), (3, 5)}
 
-This matches the endpoint pairs in the problem graph, allowing the required pairwise interactions to be implemented without routing SWAPs for this particular instance.
+The benchmark reports no routing SWAPs for Processor D on this problem instance.
 
 ### 4.3 Transpilation Comparison
 
-| Metric | Processor A | Processor B | Processor D |
-|---|---:|---:|---:|
-| Physical qubits | 5 | 9 | 6 |
-| Executable for this problem | No | Yes | Yes |
-| Logical CX gates | — | 18 | 18 |
-| Physical CX gates | — | 21 | 18 |
-| Circuit depth | — | 37 | 29 |
-| Two-qubit depth | — | 17 | 14 |
-| Routing SWAPs | — | 1 | 0 |
+| Metric            | Processor A | Processor B | Processor D |
+| ----------------- | ----------: | ----------: | ----------: |
+| Physical qubits   |           5 |           9 |           6 |
+| Executable        |          No |         Yes |         Yes |
+| Logical CX gates  |           — |          18 |          18 |
+| Physical CX gates |           — |          21 |          18 |
+| Circuit depth     |           — |          37 |          29 |
+| Two-qubit depth   |           — |          17 |          14 |
+| Routing SWAPs     |           — |           1 |           0 |
+| CX overhead       |           — |           3 |           0 |
 
-**Processor A:** Its five physical qubits are insufficient for the six logical variables, so the supplied results mark the circuit as non-executable.
+**Processor A:** It has only five physical qubits and cannot execute the circuit requiring six logical qubits.
 
-**Processor B:** The reported transpilation adds one SWAP, equivalent to three CX gates, increasing the physical CX count from 18 to 21. The reported circuit depth is 37 and the two-qubit depth is 17.
+**Processor B:** The transpilation introduces one SWAP, equivalent to three additional CX gates. The reported circuit depth is 37, and the two-qubit depth is 17.
 
-**Processor D:** The reported transpilation adds no SWAPs and retains 18 physical CX gates. Its two-qubit depth is 14, approximately 17.6% lower than Processor B's reported two-qubit depth of 17.
+**Processor D:** The circuit uses 18 physical CX gates, has depth 29, and has two-qubit depth 14. No routing SWAPs are reported.
+
+**Two-qubit depth reduction:**
+
+Reduction = [(17 − 14) / 17] × 100%
+
+Reduction ≈ 17.6%
 
 ### 4.4 Hardware Trade-offs
 
-A custom topology can reduce routing for a known graph, but higher connectivity may complicate physical chip layout. In superconducting transmon designs, additional couplers and control-line routing can increase footprint and parasitic coupling. Crosstalk and frequency-allocation constraints also need to be considered. These are design considerations, not measurements established by the supplied benchmark table.
+A topology tailored to a particular graph can reduce routing overhead. However, increased connectivity may increase chip area and complicate coupler and control-line routing. Crosstalk and frequency-allocation constraints must also be considered. These are general engineering considerations rather than effects measured directly by this benchmark.
 
 ## 5. Objectives 3 and 4 — QAOA Optimization and Benchmarking
 
 ### 5.1 Optimization Setup
 
-The supplied report evaluates QAOA at depth `p = 1`, using a transverse-field Pauli-X mixer and cost-phase operations. COBYLA was run from five reported initializations.
+The experiment uses QAOA at depth p = 1, a transverse-field Pauli-X mixer, and the COBYLA optimizer with five initializations.
 
-| Seed | Gamma | Beta | Expected cut |
-|---:|---:|---:|---:|
-| 0 | 3.2257 | 2.7821 | 17.7170 |
-| 1 | 2.7045 | 4.2368 | 15.5750 |
-| 2 | 0.7541 | 0.9485 | 15.2305 |
-| 3 | 0.0822 | 1.2088 | 17.7200 |
-| 4 | 2.9330 | 0.5898 | 15.1287 |
+The latest run produced the following expected-cut values:
 
-The best reported parameters are `gamma* = 0.0822` and `beta* = 1.2088`, giving an expected cut of `17.7200`.
+| Seed | Gamma (γ) | Beta (β) | Expected Cut |
+| ---: | --------: | -------: | -----------: |
+|    0 |    3.2257 |   2.7821 |      17.7170 |
+|    1 |    2.7045 |   4.2368 |      15.5750 |
+|    2 |    0.7541 |   0.9485 |      15.2305 |
+|    3 |    0.0822 |   1.2088 |      17.7200 |
+|    4 |    2.9330 |   0.5898 |      15.1287 |
 
-The approximation ratio is:
+The selected parameters for the subsequent benchmark were γ = 0.0822 and β = 1.2088.
 
-`r = expected cut / optimal cut = 17.7200/22 ≈ 0.8055`
+### 5.2 Mean Expected Cut
 
-**Reproducibility check:** the source says the angles were initialized uniformly in `[0, pi]`, but the reported beta value for seed 1 is `4.2368`, which exceeds pi. Confirm the actual initialization range or whether the optimized angle was wrapped before documenting the range.
+The mean expected cut is calculated as:
 
-### 5.2 Benchmark Results
+Mean Expected Cut = Sum of Expected Cuts / Number of Initializations
 
-| Processor | Condition | Executable | Logical / physical qubits | Logical CX | Physical CX | Depth | Two-qubit depth | SWAPs | Approximation ratio `r` | `P_opt` |
-|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| A | Ideal | No | 6 / 5 | — | — | — | — | — | — | — |
-| A | Noisy | No | 6 / 5 | — | — | — | — | — | — | — |
-| B | Ideal | Yes | 6 / 9 | 18 | 21 | 37 | 17 | 1 | 0.8045 | 0.1399 |
-| B | Noisy | Yes | 6 / 9 | 18 | 21 | 37 | 17 | 1 | 0.7833 | 0.1257 |
-| D | Ideal | Yes | 6 / 6 | 18 | 18 | 29 | 14 | 0 | 0.8055 | 0.1414 |
-| D | Noisy | Yes | 6 / 6 | 18 | 18 | 29 | 14 | 0 | 0.7850 | 0.1274 |
+C̄ = (17.7170 + 15.5750 + 15.2305 + 17.7200 + 15.1287) / 5
 
-The values are transcribed from the supplied report and should be cross-checked against `results/tables/results.csv`.
+**Mean Expected Cut = 16.2742**
 
-### 5.3 Interpretation
+### 5.3 Sample Standard Deviation
 
-Under the reported noisy simulation:
+The sample standard deviation measures the variation across the five expected-cut values.
 
-- Processor D's approximation ratio is `0.7850`, compared with `0.6136` for the uniform-random baseline.
-- The relative increase over the random approximation ratio is approximately `27.9%`.
-- Processor D's reported optimal-bitstring probability is `12.74%`, compared with `3.125%` for uniform random sampling, approximately `4.08 times` as high.
-- Compared with Processor B, Processor D reports a slightly higher noisy approximation ratio (`0.7850` versus `0.7833`) and optimal-bitstring probability (`0.1274` versus `0.1257`).
+Sample Standard Deviation = √[Σ(Cᵢ − C̄)² / (N − 1)]
 
-These comparisons support the claim that Processor D performs better than the random baseline and modestly better than Processor B in the supplied simulation. They do not prove a general quantum advantage over optimized classical algorithms.
+where:
+
+* Cᵢ is the expected cut for initialization i.
+* C̄ is the mean expected cut.
+* N = 5 is the number of initializations.
+
+**Sample standard deviation ≈ 1.3288**
+
+### 5.4 Mean Approximation Ratio
+
+The approximation ratio is the expected cut divided by the classical optimum.
+
+Approximation Ratio = Expected Cut / Classical Optimal Cut
+
+rᵢ = Cᵢ / C*
+
+Since C* = 22:
+
+Mean Approximation Ratio = 16.27424 / 22
+
+**Mean Approximation Ratio ≈ 0.7397**
+
+The sample standard deviation of the approximation ratio is:
+
+Standard Deviation of Ratio = 1.3288 / 22
+
+**Standard Deviation of Ratio ≈ 0.0604**
+
+### 5.5 Best Expected-Cut Result
+
+The highest expected cut among the five QAOA initializations is 17.7200, obtained with seed 3.
+
+Best Expected-Cut Ratio = Best Expected Cut / Classical Optimal Cut
+
+r_expected,best = 17.7200 / 22
+
+**Best Expected-Cut Ratio ≈ 0.8055**
+
+This is the best expected-cut ratio. It is not necessarily the best sampled-cut ratio.
+
+### 5.6 Processor Benchmark Results
+
+The following values are from the latest successful execution of `run_all.py` and its generated `results/tables/results.csv`.
+
+| Processor | Condition | Executable | Logical / Physical Qubits | Logical CX | Physical CX | Depth | Two-Qubit Depth | SWAPs | Approximation Ratio | P(opt) |
+| --------- | --------- | ---------- | ------------------------: | ---------: | ----------: | ----: | --------------: | ----: | ------------------: | -----: |
+| A         | Ideal     | No         |                     6 / 5 |          — |           — |     — |               — |     — |                   — |      — |
+| A         | Noisy     | No         |                     6 / 5 |          — |           — |     — |               — |     — |                   — |      — |
+| B         | Ideal     | Yes        |                     6 / 9 |         18 |          21 |    37 |              17 |     1 |              0.8045 | 0.1399 |
+| B         | Noisy     | Yes        |                     6 / 9 |         18 |          21 |    37 |              17 |     1 |              0.7833 | 0.1257 |
+| D         | Ideal     | Yes        |                     6 / 6 |         18 |          18 |    29 |              14 |     0 |              0.8055 | 0.1414 |
+| D         | Noisy     | Yes        |                     6 / 6 |         18 |          18 |    29 |              14 |     0 |              0.7850 | 0.1274 |
+
+The executable benchmark conditions use 4,096 shots. Processor A is non-executable because it has fewer physical qubits than the six logical qubits required.
+
+### 5.7 Benchmark Interpretation
+
+Under the latest noisy simulation:
+
+* Processor D achieves an approximation ratio of 0.7850, compared with the random baseline of 0.6136.
+* Processor D's optimal-bitstring probability is 0.1274, compared with the random baseline of 0.03125.
+* Processor D's noisy approximation ratio is slightly higher than Processor B's: 0.7850 versus 0.7833.
+* Processor D uses 18 physical CX gates and zero routing SWAPs, compared with 21 physical CX gates and one SWAP for Processor B.
+* Processor D's circuit depth is 29, compared with 37 for Processor B.
+
+The approximation ratios are close, so the primary demonstrated advantage of Processor D is reduced circuit and routing overhead rather than a substantial improvement in solution quality. The results apply to this graph and simulation configuration and do not establish a general quantum advantage.
 
 ## 6. Limitations and Future Work
 
 ### 6.1 Topology Generalization
 
-The custom coupling map is tailored to this graph. A topology that removes routing for one graph may not be suitable for another, especially when the target graph has different or non-planar connectivity.
+Processor D's coupling map is tailored to the target graph. A topology that avoids routing for one graph may not be suitable for another graph with different connectivity.
 
 ### 6.2 Circuit Depth and Noise
 
-Increasing QAOA depth may improve ideal optimization results, but it also increases gate count and exposure to noise. The supplied material suggests investigating depths `p = 2` and `p = 3`; their performance should be measured rather than assumed to improve under noise.
+Increasing QAOA depth to p = 2 or p = 3 may improve ideal optimization results, but it also increases circuit cost and exposure to noise. The effect should be measured rather than assumed.
 
-### 6.3 Recommended Next Steps
+### 6.3 Future Work
 
-1. Verify all reported values against the source CSV files.
-2. Repeat benchmarking for multiple graphs and multiple optimizer seeds.
-3. Compare ideal and noisy performance at several QAOA depths.
-4. Investigate noise-aware parameter optimization.
-5. Evaluate error-mitigation methods such as zero-noise extrapolation and Pauli twirling, including their sampling overhead.
-6. Investigate dynamical decoupling and gate scheduling to reduce idle-time errors and circuit depth where supported by the hardware.
+Future work could include benchmarking additional graphs and QAOA depths, investigating noise-aware parameter optimization, and evaluating error-mitigation methods where supported by the simulation or hardware workflow.
 
 ## 7. Conclusion
 
-This report formulates PS-O1 as a weighted Max-Cut problem on a six-vertex, nine-edge graph and uses exhaustive enumeration to establish the reported optimum of 22. The best supplied `p = 1` QAOA result has an expected cut of `17.7200` and an approximation ratio of approximately `0.8055`.
+This report formulates PS-O1 as a weighted Max-Cut problem on a six-vertex, nine-edge graph and uses exhaustive enumeration to establish a classical optimum of 22. Across five QAOA initializations, the mean expected cut is 16.2742, with a sample standard deviation of approximately 1.3288. The best expected cut is 17.7200, corresponding to an expected-cut approximation ratio of approximately 0.8055.
 
-The custom six-qubit Processor D matches the target interaction graph and, in the reported transpilation results, eliminates routing SWAPs. Its noisy approximation ratio is reported as `0.7850`, with an optimal-bitstring probability of `12.74%`. These results suggest that topology-aware compilation can reduce routing overhead and improve performance for this particular problem instance.
+The custom six-qubit Processor D matches the target interaction graph and eliminates routing SWAPs in the reported transpilation. In the latest noisy benchmark, it achieves an approximation ratio of 0.7850 and an optimal-bitstring probability of 0.1274. The Bell-state results show lower estimated fidelity for the pair requiring more CX operations under the noisy simulation.
 
-Before final submission, resolve the source inconsistencies noted in the Bell-state section and QAOA initialization range, and confirm the benchmark tables against the underlying CSV files.
+Overall, these results demonstrate the value of topology-aware benchmarking for this particular instance. They do not establish a general quantum advantage.
 
-## 8. Referenced Result Files
+## 8. Result Files
 
-The supplied material references:
+The project repository includes the following result artifacts:
 
-- `results/tables/results.csv` — processor-level QAOA benchmark results
-- `results/tables/bell.csv` — Bell-state verification measurements
-
-Include these files with the project repository or ensure they are available to the evaluator if reproducibility is required.
+* `results/tables/results.csv` — processor-level QAOA benchmark results.
+* `results/tables/bell.csv` — Bell-state verification measurements.
+* `results/figures/` — generated figures used to explain the problem and benchmark results.
