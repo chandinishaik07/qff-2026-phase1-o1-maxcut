@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Qiskit Fall Fest 2026 — Phase 1: Architecture Benchmark
 **Problem Statement:** O1 — Max-Cut  
 **Track:** Quantum Optimization  
@@ -137,3 +138,5 @@ python main.py
 ## 8. AI Assistance Disclosure
 
 AI assistance was limited to environment troubleshooting, script organization, and Markdown formatting. All experiments, simulations, optimizations, and scientific analyses were independently conducted and validated.
+=======
+>>>>>>> 10c60f0 (Update Processor D, instances.json, and figures for Phase 2)
