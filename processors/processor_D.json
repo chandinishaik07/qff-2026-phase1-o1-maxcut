@@ -1,0 +1,131 @@
+{
+    "name": "Processor D",
+    "team": "Team",
+    "problem_statement": "PS-O1",
+    "num_qubits": 6,
+    "edges": [
+        [
+            0,
+            2
+        ],
+        [
+            0,
+            3
+        ],
+        [
+            0,
+            4
+        ],
+        [
+            2,
+            3
+        ],
+        [
+            2,
+            4
+        ],
+        [
+            3,
+            4
+        ],
+        [
+            3,
+            5
+        ],
+        [
+            4,
+            1
+        ],
+        [
+            1,
+            5
+        ]
+    ],
+    "coupling_map": [
+        [
+            0,
+            2
+        ],
+        [
+            0,
+            3
+        ],
+        [
+            0,
+            4
+        ],
+        [
+            1,
+            4
+        ],
+        [
+            1,
+            5
+        ],
+        [
+            2,
+            0
+        ],
+        [
+            2,
+            3
+        ],
+        [
+            2,
+            4
+        ],
+        [
+            3,
+            0
+        ],
+        [
+            3,
+            2
+        ],
+        [
+            3,
+            4
+        ],
+        [
+            3,
+            5
+        ],
+        [
+            4,
+            0
+        ],
+        [
+            4,
+            1
+        ],
+        [
+            4,
+            2
+        ],
+        [
+            4,
+            3
+        ],
+        [
+            5,
+            1
+        ],
+        [
+            5,
+            3
+        ]
+    ],
+    "basis_gates": [
+        "rz",
+        "sx",
+        "x",
+        "cx"
+    ],
+    "noise": {
+        "model": "official",
+        "p1": 0.001,
+        "p2": 0.005,
+        "p_readout": 0.01
+    },
+    "design_rationale": "Coupling map perfectly matches the 6-vertex PS-O1 problem graph to eliminate routing overhead."
+}
