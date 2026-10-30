@@ -1,4 +1,11 @@
-venv/
 __pycache__/
-*.pyc
+*.py[cod]
+.venv/
+venv/
+opt-env/
+.morph/
+.vscode/
+.DS_Store
+._*
+__MACOSX/
 .ipynb_checkpoints/

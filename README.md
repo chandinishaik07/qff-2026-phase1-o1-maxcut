@@ -1,139 +1,151 @@
-# Qiskit Fall Fest 2026 — Phase 1: Architecture Benchmark
-**Problem Statement:** O1 — Max-Cut  
-**Track:** Quantum Optimization  
-**Phase:** 1 (Online Qualification Stage)
+# Qiskit Fall Fest 2026 — Optimization Track (Phase 2)
+
+**Team Name:** Qubit Nexus
+**Selected Track & Problem Statement:** PS-O1 (Max-Cut Network Partitioning)
+**Submission Repository:** Phase 2 Submission with Archived Phase 1
 
 ---
 
-## 1. Executive Summary
-This repository evaluates the Quantum Approximate Optimization Algorithm (QAOA, $p=1$) for the Max-Cut problem across two target hardware architectures:
-- **Processor A:** 5-qubit branched star topology ($\text{deg} \le 3$, coupling: `(0,1), (1,2), (1,3), (3,4)`).
-- **Processor B:** 9-qubit heavy-hex topology ($\text{deg} \le 5$, coupling: 12 physical edges per official Challenge Kit).
+## 1. Executive Summary & Problem Formulation
 
-Using identical variational parameters, **Processor B achieves a 0.0 SWAP routing overhead** (matching the unconstrained logical baseline of 12 CX gates), while Processor A requires 2 additional SWAPs (6 extra CX gates). Consequently, Processor B achieves an approximation ratio of **0.797** versus **0.784** on Processor A under hardware noise.
+This repository contains our Phase 2 submission for **PS-O1 (Max-Cut Network Partitioning)**.
 
----
+The optimization task evaluates Max-Cut partitioning on a 6-vertex, 9-edge weighted network \(G = (V, E, w)\):
 
-## 2. Problem Formulation & Classical Baseline
-- **Graph Instance:** 5-node cyclic graph ($C_5$) with cross-edge $(0, 3)$, yielding $\vert{}V\vert{} = 5$ and $\vert{}E\vert{} = 6$.
-- **Classical Brute-Force Baseline:** Maximum cut = **5** (partition: `[1, 0, 1, 0, 0]`).
-- **Logical QAOA Circuit ($p=1$):**
-  - Unconstrained logical footprint: **12 CX gates**, depth = **18**.
-  - Classical COBYLA optimization yielded optimal angles: $\gamma^* = 2.7916$, $\beta^* = 0.3508$.
-  - Reference ideal expected cut: $\langle C \rangle = 4.104$ (Approximation Ratio $r = 0.821$).
+$$
+E = \{(0,2,1), (0,3,4), (0,4,4), (1,4,3), (1,5,3), (2,3,5), (2,4,1), (3,4,4), (3,5,2)\}
+$$
 
----
+We map binary partitioning variables \(x_i \in \{0,1\}\) to Pauli-\(Z\) operators to construct the cost Hamiltonian \(H_C\). We solve the problem using the Quantum Approximate Optimization Algorithm (QAOA, \(p=1\)) and benchmark the results across multiple target architectures under ideal and noisy simulation conditions.
 
-## 3. Quantitative Results & Comparison
+### Key Benchmark Summary
 
-### A. Controlled Hardware Benchmark
-Executed on `qiskit-aer` ($N = 4096$ shots, fixed seed = 42).  
-Noise model: 1Q error = $0.1\%$, 2Q CX error = $1.0\%$, readout error = $2.0\%$.
+| Metric                                           | Random Baseline | Processor A (5Q) | Processor B (9Q, Noisy) | Processor D (6Q, Noisy) | Classical Optimum |
+| ------------------------------------------------ | --------------: | ---------------: | ----------------------: | ----------------------: | ----------------: |
+| **Executable**                                   |             N/A |               No |                     Yes |                     Yes |               N/A |
+| **Approximation Ratio (\(r\))**                  |          0.6136 |              N/A |                  0.7833 |              **0.7850** |            1.0000 |
+| **Optimal Hit Probability (\(P_{\text{opt}}\))** |  0.0312 (3.12%) |              N/A |                  0.1257 |              **0.1274** |               N/A |
+| **Routing SWAPs**                                |             N/A |              N/A |                       1 |                   **0** |               N/A |
+| **Physical CX Gates**                            |             N/A |              N/A |                      21 |                  **18** |               N/A |
+| **Classical Optimum (\(C^*\))**                  |             N/A |              N/A |                      22 |                      22 |            **22** |
 
-| Architecture Stage | Circuit Depth | 2Q Gates (CX) | Equivalent SWAPs | Expected Cut $\langle C \rangle$ | Approx Ratio ($r$) | Std Error ($\sigma_r$) |
-|---|---|---|---|---|---|---|
-| **Ideal Reference** | 18 | 12 | 0.00 | 4.104 | 0.821 | 0.0000 |
-| **Processor A (5Q Branched)** | 30 | 18 | 2.00 | 3.919 | 0.784 | 0.0161 |
-| **Processor B (9Q Heavy-Hex)** | 24 | 12 | 0.00 | 3.986 | 0.797 | 0.0157 |
-
-$$\text{Equivalent SWAPs} = \frac{\text{Compiled CX} - \text{Logical CX}}{3}$$
-
-### B. Transpiler Routing Heuristic Comparison
-
-| Processor | Routing Heuristic | Circuit Depth | 2Q Gates (CX) | Equivalent SWAPs |
-|---|---|---|---|---|
-| **Processor A (5Q Branched)** | Basic | 36 | 24 | 4.00 |
-| **Processor A (5Q Branched)** | Lookahead | 30 | 18 | 2.00 |
-| **Processor A (5Q Branched)** | Sabre | 30 | 18 | 2.00 |
-| **Processor B (9Q Heavy-Hex)** | Basic | 24 | 12 | 0.00 |
-| **Processor B (9Q Heavy-Hex)** | Lookahead | 24 | 12 | 0.00 |
-| **Processor B (9Q Heavy-Hex)** | Sabre | 24 | 12 | 0.00 |
+Processor D achieves approximately **4.08x the random baseline's optimal-hit probability**, while using three fewer physical CX gates and requiring no routing SWAPs compared with Processor B.
 
 ---
 
-## 4. Visual Dashboards
+## 2. Repository Structure
 
-### Processor Topologies
-| Processor A (5-Qubit Branched) | Processor B (9-Qubit Heavy-Hex) |
-|:---:|:---:|
-| ![Processor A](results/figures/processor_A_graph.png) | ![Processor B](results/figures/processor_B_graph.png) |
-
-### Performance & Trade-offs
-| Depth & Ratio Comparison | Noise Sensitivity Sweep | Routing Heuristic Trade-offs |
-|:---:|:---:|:---:|
-| ![Performance](results/figures/AB_performance.png) | ![Noise Sweep](results/figures/architecture_tradeoffs.png) | ![Routing](results/figures/routing_comparison.png) |
-
----
-
-## 5. Architectural Findings
-1. **Zero Routing Overhead on Processor B:** The heavy-hex connectivity of Processor B naturally embeds the cyclic problem graph plus cross edge, requiring **0 SWAP gates** and preserving the ideal 12 CX footprint across all routing heuristics.
-2. **Bottlenecks on Processor A:** Processor A's star-like bottleneck at qubit 1 forces at least 2 equivalent SWAPs (6 CX gates) under Lookahead/Sabre, and up to 4 SWAPs under Basic routing.
-3. **Noise Attenuation:** Eliminating SWAP gates on Processor B minimizes exposure to the 1.0% two-qubit depolarizing error channel, resulting in higher expectation values ($r = 0.797$ vs $0.784$).
-
----
-
-## 6. Project Structure
+The root directory contains the Phase 2 deliverables, while the original Phase 1 materials are preserved in `Phase 1/`.
 
 ```text
-project/
-├── README.md
-├── main.ipynb
-├── requirements.txt
-├── data/
-│   ├── raw/
-│   └── processed/
-├── docs/
-│   └── ai/
-│       ├── adrs.md
-│       ├── issues.md
-│       ├── patterns.md
-│       ├── plan-evolution.md
-│       ├── postmortem.md
-│       └── prompts.md
-├── processors/
-│   ├── processor_A.json
-│   └── processor_B.json
-├── src/
-│   ├── __init__.py
-│   ├── problem.py
-│   ├── processors.py
-│   ├── routing.py
-│   ├── metrics.py
-│   └── visualization.py
-├── results/
-│   ├── tables/
-│   └── figures/
-├── report.md
-└── assets/
-    └── qff_phase1_latex_images/
-        ├── eq_qubit_state.png
-        ├── eq_bell_state.png
-        ├── eq_graph.png
-        ├── eq_bell_fidelity.png
-        ├── eq_zz_expectation.png
-        └── eq_standard_error.png
+.
+|-- Phase 1/                    # Archived Phase 1 work
+|-- data/
+|   `-- instances.json          # Problem instance data
+|-- processors/
+|   `-- processor_D.json        # Custom six-qubit processor
+|-- results/
+|   |-- figures/
+|   `-- tables/
+|       |-- bell.csv
+|       `-- results.csv
+|-- src/                        # Supporting source files
+|-- main.ipynb                  # End-to-end benchmark notebook
+|-- qff_phase2.py               # Evaluation and metric utilities
+|-- generate_processor.py       # Processor generation utility
+|-- report.md                   # Technical report
+|-- requirements.txt            # Pinned Python dependencies
+`-- run_all.py                  # Automated execution pipeline
 ```
 
 ---
 
-## 7. Reproduction Steps
+## 3. Quick Start & Reproducibility (Gate G3)
+
+The benchmark pipeline generates the results tables and figures using the provided problem and processor configuration files.
+
+### 3.1 Environment Setup
+
+Clone the repository and enter its directory:
 
 ```bash
-# 1. Clone repository
-git clone https://github.com/chandinishaik07/qff-2026-phase1-o1-maxcut
+git clone https://github.com/chandinishaik07/qff-2026-phase1-o1-maxcut.git
 cd qff-2026-phase1-o1-maxcut
-
-# 2. Virtual environment setup
-python -m venv venv
-.\venv\Scripts\Activate.ps1    # On Linux/macOS: source venv/bin/activate
-
-# 3. Install dependencies
-pip install -r requirements.txt
-
-# 4. Execute full benchmark
-python main.py
 ```
 
-## 8. AI Assistance Disclosure
+Create and activate a virtual environment:
 
-AI assistance was limited to environment troubleshooting, script organization, and Markdown formatting. All experiments, simulations, optimizations, and scientific analyses were independently conducted and validated.
+```bash
+python -m venv .qff2026-venv
+```
+
+On Windows PowerShell:
+
+```powershell
+.\.qff2026-venv\Scripts\Activate.ps1
+```
+
+On Linux or macOS:
+
+```bash
+source .qff2026-venv/bin/activate
+```
+
+Install the pinned dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3.2 Automated Pipeline Execution
+
+Run the standalone pipeline:
+
+```bash
+python run_all.py
+```
+
+The script validates Processor D, performs the Bell-state verification and classical Max-Cut calculation, optimizes QAOA parameters, and exports the benchmark results.
+
+### 3.3 Jupyter Notebook Execution
+
+Open `main.ipynb` in Jupyter or VS Code and execute all cells from beginning to end.
+
+To execute it non-interactively:
+
+```bash
+jupyter nbconvert --to notebook --execute --inplace main.ipynb
+```
+
+---
+
+## 4. Hardware Architectures & Processor D
+
+* **Processor A (5 qubits):** Non-executable for PS-O1 because the problem requires six logical qubits, exceeding the processor's capacity.
+* **Processor B (9 qubits):** The target topology requires one routing SWAP, resulting in 21 physical CX gates and a circuit depth of 37.
+* **Processor D (6 qubits):** A custom application-specific coupling graph designed to support the PS-O1 problem structure.
+
+### Processor D Advantages
+
+* **Zero routing SWAPs:** The circuit maps without additional routing SWAPs.
+* **Zero CX overhead:** The 18 logical CX gates compile to 18 physical CX gates.
+* **Reduced circuit depth:** Processor D has a circuit depth of 29, compared with 37 for Processor B.
+* **Validation:** Processor D passes the validation performed by `run_all.py`.
+
+In the current noisy simulation, Processor D achieves an approximation ratio of 0.7850, compared with 0.7833 for Processor B. These results are close; the primary demonstrated advantage of Processor D is reduced circuit overhead rather than a substantial improvement in solution quality.
+
+---
+
+## 5. Phase 1 Archive
+
+The original Phase 1 work is preserved in the `Phase 1/` directory. It contains earlier project materials and documentation.
+
+The Phase 2 implementation and deliverables are maintained separately at the repository root.
+
+---
+
+## 6. AI Usage Disclosure
+
+Generative AI assistance was used during development for debugging, documentation formatting, LaTeX notation, and troubleshooting development and Git workflows.
+
+The team is responsible for reviewing and validating the submitted implementation, experimental results, and documentation.

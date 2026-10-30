@@ -6,7 +6,7 @@ from src.metrics import calculate_approximation_ratio
 
 def optimize_qaoa_angles(graph, max_cut_val):
     sim = AerSimulator()
-    
+
     def cost_func(params):
         gamma, beta = params
         circuit = build_qaoa_circuit(graph, gamma=gamma, beta=beta)
@@ -17,7 +17,7 @@ def optimize_qaoa_angles(graph, max_cut_val):
 
     init_angles = [0.5, 0.5]
     res = minimize(cost_func, init_angles, method='COBYLA', options={'maxiter': 30})
-    
+
     opt_gamma, opt_beta = float(res.x[0]), float(res.x[1])
     optimal_cut = float(-res.fun)
     return opt_gamma, opt_beta, optimal_cut
