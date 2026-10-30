@@ -1,7 +1,0 @@
-Processor,Routing Method,Depth,2Q Gates,Equivalent SWAPs
-Processor_A_5Q_Branched,Basic,36,24,4.0
-Processor_A_5Q_Branched,Lookahead,30,18,2.0
-Processor_A_5Q_Branched,Sabre,30,18,2.0
-Processor_B_9Q_HeavyHex,Basic,24,12,0.0
-Processor_B_9Q_HeavyHex,Lookahead,24,12,0.0
-Processor_B_9Q_HeavyHex,Sabre,24,12,0.0
