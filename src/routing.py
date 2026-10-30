@@ -7,11 +7,11 @@ from src.metrics import extract_circuit_metrics
 def evaluate_routing_methods(logical_qc, processor_json_path):
     with open(processor_json_path, 'r', encoding='utf-8') as f:
         proc = json.load(f)
-        
+
     coupling = CouplingMap(proc["coupling_map"])
     methods = ["basic", "lookahead", "sabre"]
     results = []
-    
+
     for method in methods:
         compiled = transpile(
             logical_qc,
@@ -29,5 +29,5 @@ def evaluate_routing_methods(logical_qc, processor_json_path):
             "2Q Gates": metrics["two_qubit_gates"],
             "Equivalent SWAPs": metrics["equivalent_swaps"]
         })
-        
+
     return results
