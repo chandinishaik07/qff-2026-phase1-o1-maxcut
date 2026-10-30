@@ -1,9 +1,12 @@
+import matplotlib
+matplotlib.use("Agg")
 import os, csv
 import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
 from scipy.optimize import minimize
 from qiskit_aer import AerSimulator
+
 
 from qff_phase2 import (
     PROCESSOR_A, PROCESSOR_B, load_processor, validate_processor_d,
@@ -118,7 +121,7 @@ rows = [
      "logical_qubits": 6, "physical_qubits": 5, "classical_optimum": C_star, "random_baseline": f"{random_r:.4f}"},
     {"problem_id": "PS-O1", "processor": "A", "condition": "noisy", "executable": "false",
      "logical_qubits": 6, "physical_qubits": 5, "classical_optimum": C_star, "random_baseline": f"{random_r:.4f}"},
-    
+
     {"problem_id": "PS-O1", "processor": "B", "condition": "ideal", "executable": "true",
      "logical_qubits": 6, "physical_qubits": 9, "logical_cx": metrics_B["logical_cx"], "cx": metrics_B["cx"],
      "depth": metrics_B["depth"], "two_q_depth": metrics_B["two_q_depth"], "swaps": metrics_B["swaps"],

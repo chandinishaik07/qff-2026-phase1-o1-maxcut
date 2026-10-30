@@ -1,0 +1,4 @@
+Stage,Depth,2Q Gates,Equiv SWAPs,Expected Cut,Approx Ratio,Std Error
+Ideal Reference,18,12,0.0,4.104,0.821,0.0
+Processor_A_5Q_Branched,30,18,2.0,3.919,0.784,0.0161
+Processor_B_9Q_HeavyHex,24,12,0.0,3.986,0.797,0.0157

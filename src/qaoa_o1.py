@@ -1,4 +1,4 @@
-﻿import numpy as np
+import numpy as np
 from qiskit import QuantumCircuit
 from qiskit.circuit import Parameter
 
@@ -27,18 +27,18 @@ def solve_classical_maxcut():
 def build_qaoa_circuit(gamma=None, beta=None, measure=True):
     qc = QuantumCircuit(NUM_QUBITS)
     qc.h(range(NUM_QUBITS))
-    
+
     g = Parameter("gamma") if gamma is None else gamma
     b = Parameter("beta") if beta is None else beta
-    
+
     for u, v, w in EDGES:
         qc.cx(u, v)
         qc.rz(2 * g * w, v)
         qc.cx(u, v)
-        
+
     for q in range(NUM_QUBITS):
         qc.rx(2 * b, q)
-        
+
     if measure:
         qc.measure_all()
     return qc

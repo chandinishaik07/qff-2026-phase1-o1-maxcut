@@ -1,4 +1,4 @@
-﻿"""
+"""
 qff_phase2.py - Qiskit Fall Fest 2026, Phase 2 (Optimization Track) starter utilities.
 """
 from __future__ import annotations
